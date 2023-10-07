@@ -1,5 +1,6 @@
 package in.org.gramtarang.placementdashboard.entity;
 
+import in.org.gramtarang.placementdashboard.common.RoleType;
 import in.org.gramtarang.placementdashboard.common.StudentChoice;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -46,8 +47,10 @@ public class User {
     @JoinColumn(name = "group_id")
     private Group group;
 
-    @ManyToOne(cascade = CascadeType.PERSIST, fetch = FetchType.EAGER)
-    @JoinTable(name = "user_roles", joinColumns = {@JoinColumn(name = "user_id")}, inverseJoinColumns = {@JoinColumn(name = "role_id")})
-    private Role userRole;
+//    @ManyToOne(cascade = CascadeType.PERSIST, fetch = FetchType.EAGER)
+//    @JoinTable(name = "user_roles", joinColumns = {@JoinColumn(name = "user_id")}, inverseJoinColumns = {@JoinColumn(name = "role_id")})
+//    private Role userRole;
+    @Enumerated(EnumType.ORDINAL)
+    private RoleType role;
 
 }

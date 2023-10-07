@@ -1,0 +1,6 @@
+- add user to the group - api
+- we have to check that one user can not be added for the same recruitmentId twice - inside service i have to check
+           - after listing existing placement data we will check, if user already exists with the same receuitment id then
+             we will don't add that user to the placemnet data
+
+-

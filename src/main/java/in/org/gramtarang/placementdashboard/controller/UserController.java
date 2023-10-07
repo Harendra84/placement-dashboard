@@ -22,34 +22,44 @@ public class UserController {
     }
 
     ResponseEntityDto<User> response = new ResponseEntityDto<>();
+    ResponseEntityDto<UserLoginDto> loginDtoResponse = new ResponseEntityDto<>();
 
     @PostMapping("/login")
-    public ResponseEntity<UserLoginDto> login(@RequestParam String username, @RequestParam String password,
+    public ResponseEntity<ResponseEntityDto<UserLoginDto>> login(@RequestParam String username, @RequestParam String password,
                                               HttpServletRequest request) throws PlacementException
     {
-        User user = userService.authenticateLogin(username, password);
+
         UserLoginDto dto = new UserLoginDto();
-        dto.setUsername(user.getUsername());
-        dto.setFullName(user.getFullName());
-        if (user.getUserRole() != null) {
-            dto.setRoleType(user.getUserRole().getRoleType());
-        } else {
-            dto.setRoleType(RoleType.UNDEFINED);
+        response = userService.authenticateLogin(username, password);
+        if(response.isStatus())
+        {
+            User user = response.getData();
+            dto.setUsername(user.getUsername());
+            dto.setFullName(user.getFullName());
+            if (user.getRole() != null) {
+                dto.setRoleType(user.getRole());
+            } else {
+                dto.setRoleType(RoleType.UNDEFINED);
+            }
+            loginDtoResponse.setMessage("Login SuccessFully");
+            loginDtoResponse.setStatus(true);
+            loginDtoResponse.setData(dto);
+            request.getSession().setAttribute("USERID", user.getUserId());
+            request.getSession().setAttribute("ROLE-TYPE", user.getRole());
+            request.getSession().setAttribute("USERNAME",user.getUsername());
+        } else{
+            loginDtoResponse.setMessage("Invalid UserName and Password");
+            loginDtoResponse.setStatus(false);
         }
-        request.getSession().setAttribute("USERID", user.getUserId());
-        request.getSession().setAttribute("ROLE-TYPE", user.getUserRole().getRoleType());
-        request.getSession().setAttribute("USERNAME",user.getUsername());
-        return new ResponseEntity<>(dto, HttpStatus.OK);
+        return new ResponseEntity<>(loginDtoResponse, HttpStatus.OK);
     }
 
-    @PostMapping("/add-user")
+    @PostMapping("/add")
     public ResponseEntity<ResponseEntityDto<User>> createUser(@RequestBody User user, HttpServletRequest request) throws PlacementException{
+        response = null;
         if(request.getSession().getAttribute("ROLE-TYPE").toString() == "ADMIN")
         {
-            User createdUser = userService.addUser(user);
-            response.setData(createdUser);
-            response.setMessage("User Added Successfully");
-            response.setStatus(true);
+            response = userService.addUser(user);
         } else{
             response.setMessage("Invalid User");
             response.setStatus(false);
@@ -57,8 +67,9 @@ public class UserController {
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
-    @PostMapping("/update-user")
+    @PostMapping("/update")
     public ResponseEntity<ResponseEntityDto<User>> updateUser(@RequestBody User user, HttpServletRequest request) throws PlacementException{
+        response = null;
         if(request.getSession().getAttribute("ROLE-TYPE").toString() == "ADMIN")
         {
             response = userService.updateUser(user);
@@ -73,13 +84,32 @@ public class UserController {
     @PostMapping("/logout")
     public @ResponseBody
     UserLoginDto logout(HttpServletRequest request) throws PlacementException {
+        response = null;
         request.getSession().invalidate();
         request.getSession().removeAttribute("USERID");
         request.getSession().removeAttribute("ROLE-TYPE");
         request.getSession().removeAttribute("USERNAME");
         return new UserLoginDto();
     }
+    @PostMapping("/listBy")
+    public ResponseEntity<ResponseEntityDto<User>> getUserByRole(@RequestParam String roleName, HttpServletRequest request){
+        //first get the role id by roletype
+        //then list the users details by using roleid from the userroles table
+        response = null;
+        if(request.getSession().getAttribute("ROLE-TYPE").toString() != "STUDENT"){
+            response = userService.getUserByRole(roleName);
+        } else{
+            response.setMessage("Invalid UserRole");
+            response.setStatus(false);
+        }
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
 
-//    public ResponseEntity<ResponseEntityDto<UserInfoDto>>
+    @PostMapping("/listStudentDetails/{userId}")
+    public ResponseEntity<ResponseEntityDto<User>> getStudentDetails(@PathVariable(value = "userId") int userId, HttpServletRequest request) throws PlacementException{
+        response = null;
+        response = userService.getStudentDetails(userId);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
 
 }
